@@ -6,7 +6,7 @@ import dash_canvas
 import dash_table
 import dash_html_components as html
 import dash_core_components as dcc
-
+from os import getenv
 import pandas as pd
 import numpy as np
 import plotly.express as px
@@ -20,7 +20,7 @@ from flask import Flask
 
 app = dash.Dash(__name__)
 server = app.server
-app.config.suppress_callback_exceptions = True
+#app.config.suppress_callback_exceptions = True
 #app.server.config["SQLALCHEMY_DATABASE_URI"] = "postgres://kcfwfqwznavpjq:9473936daf43bff3d17c1dd8ab2c28144dfbf677\
 #14cb30622e3017bbe55cdeac@ec2-34-197-188-147.compute-1.amazonaws.com:5432/d9eat64jon4dti"
 
@@ -36,7 +36,13 @@ diagnosises_labels = ['Healthy', 'Mild', 'Moderate', 'Severe', 'Proliferative']
 diagnosises = [{'label': i, 'value': i} for i in diagnosises_labels]
 
 # ----------------------------------------------------------------------------------------------
-s3_client = boto3.client('s3')
+boto_kwargs = {
+    "aws_access_key_id": getenv("AWS_ACCESS_KEY_ID"),
+    "aws_secret_access_key": getenv("AWS_SECRET_ACCESS_KEY"),
+    "region_name": getenv("AWS_REGION"),
+}
+s3_client = boto3.Session(**boto_kwargs).client("s3")
+#s3_client = boto3.client('s3')
 s3_resource = boto3.resource('s3')
 
 bucket_name = 'eye-fundi-images'
