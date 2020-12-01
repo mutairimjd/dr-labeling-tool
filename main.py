@@ -8,8 +8,7 @@ import dash_html_components as html
 import dash_core_components as dcc
 from os import getenv
 import pandas as pd
-import numpy as np
-import plotly.express as px
+
 
 from flask_sqlalchemy import SQLAlchemy
 from flask import Flask
