@@ -45,9 +45,9 @@ diagnosises = [{'label': i, 'value': i} for i in diagnosises_labels]
 
 # ----------------------------------------------------------------------------------------------
 boto_kwargs = {
-    "aws_access_key_id": getenv("AWS_ACCESS_KEY_ID"),
-    "aws_secret_access_key": getenv("AWS_SECRET_ACCESS_KEY"),
-    "region_name": getenv("AWS_REGION"),
+    "AWS_ACCESS_KEY_ID": getenv("AWS_ACCESS_KEY_ID"),
+    "AWS_SECRET_ACCESS_KEY": getenv("AWS_SECRET_ACCESS_KEY"),
+    "AWS_REGION": getenv("AWS_REGION"),
 }
 s3_client = boto3.Session(**boto_kwargs).client("s3")
 s3_resource = boto3.resource('s3')
