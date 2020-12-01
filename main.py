@@ -15,7 +15,7 @@ from flask import Flask
 
 server = Flask(__name__)
 app = dash.Dash(__name__, server=server, suppress_callback_exceptions=True)
-#app.server.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.server.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 app.server.config["SQLALCHEMY_DATABASE_URI"] = "postgres://sijsukdyexzkgd:d3eb93de50667df727a076329de19ad474eca375fe2cd\
 634209dc4911dfb91b4@ec2-54-163-47-62.compute-1.amazonaws.com:5432/dbi07hebtnf8ic"
@@ -45,9 +45,9 @@ diagnosises = [{'label': i, 'value': i} for i in diagnosises_labels]
 
 # ----------------------------------------------------------------------------------------------
 boto_kwargs = {
-    "AWS_ACCESS_KEY_ID": getenv("AWS_ACCESS_KEY_ID"),
-    "AWS_SECRET_ACCESS_KEY": getenv("AWS_SECRET_ACCESS_KEY"),
-    "AWS_REGION": getenv("AWS_REGION"),
+    "aws_access_key_id": getenv("AWS_ACCESS_KEY_ID"),
+    "aws_secret_access_key": getenv("AWS_SECRET_ACCESS_KEY"),
+    "region_name": getenv("AWS_REGION"),
 }
 s3_client = boto3.Session(**boto_kwargs).client("s3")
 s3_resource = boto3.resource('s3')
