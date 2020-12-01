@@ -152,3 +152,5 @@ def data_save(excel_clicks, submit_clicks, n_intervals, table_data, sec):
 
 if __name__ == '__main__':
     app.run_server(debug=True)
+
+
