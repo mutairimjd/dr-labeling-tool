@@ -1,1 +1,1 @@
-web: gunicorn --bind main:server
+web: gunicorn main:server
