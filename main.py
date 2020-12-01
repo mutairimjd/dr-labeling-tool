@@ -2,13 +2,14 @@ import boto3
 import dash
 from dash.dependencies import Input, Output, State
 from dash.exceptions import PreventUpdate
+from dash_extensions import Download
+from dash_extensions.snippets import send_data_frame
 import dash_canvas
 import dash_table
 import dash_html_components as html
 import dash_core_components as dcc
 from os import getenv
 import pandas as pd
-
 
 from flask_sqlalchemy import SQLAlchemy
 from flask import Flask
@@ -22,8 +23,8 @@ app.server.config["SQLALCHEMY_DATABASE_URI"] = "postgres://sijsukdyexzkgd:d3eb93
 
 db = SQLAlchemy(app.server)
 
-class Results(db.Model):
 
+class Results(db.Model):
     __tablename__ = 'labeling-results'
 
     Image_name = db.Column('Image File Name', db.String(40), nullable=False, primary_key=True)
@@ -32,6 +33,7 @@ class Results(db.Model):
     def __init__(self, image_name, class_name):
         self.Image_name = image_name
         self.Class_name = class_name
+
 
 # -----------------------
 
@@ -99,12 +101,17 @@ app.layout = html.Div([
     html.Div([
         html.Button("Export Table to Excel", id='excel_btn', n_clicks=0),
         html.Button("Submit Table", id='submit_btn', n_clicks=0),
-    ]),
-    # for notification when saving to excel or database
-    html.Div(id='placeholder', children=[]),
-    dcc.Store(id="store", data=0),
-    dcc.Interval(id='interval', interval=1000),
+        # for notification when saving to excel
+        html.Div(id='excel_notification_placeholder', children=[]),
+        dcc.Store(id="excel_notification_store", data=0),
+        dcc.Interval(id='excel_notification_nterval', interval=1000),
+        Download(id="download"),
+        # for notification when saving to database
+        html.Div(id='db_notification_placeholder', children=[]),
+        dcc.Store(id="db_notification_store", data=0),
+        dcc.Interval(id='db_notification_interval', interval=1000),
 
+    ]),
 ])
 
 
@@ -129,30 +136,52 @@ def label_image(json_data, table_data):
 
 
 @app.callback(
-    [Output('placeholder', 'children'),
-     Output("store", "data")],
+    [Output("download", "data"),
+     Output('excel_notification_placeholder', 'children'),
+     Output("excel_notification_store", "data")],
     [Input('excel_btn', 'n_clicks'),
-     Input('submit_btn', 'n_clicks'),
-     Input("interval", "n_intervals")],
+     Input("excel_notification_nterval", "n_intervals")],
     [State('table', 'data'),
-     State('store', 'data')]
+     State('excel_notification_store', 'data')]
 )
-def data_save(excel_clicks, submit_clicks, n_intervals, table_data, sec):
+def save_to_csv(n_clicks, n_intervals, table_data, sec):
     no_notification = html.Plaintext("", style={'margin': "0px"})
-    notification_text = html.Plaintext("The Shown Table Data has been saved.",
+    notification_text = html.Plaintext("The Shown Table Data has been saved to the excel sheet.",
                                        style={'color': 'green', 'font-weight': 'bold', 'font-size': 'large'})
     input_triggered = dash.callback_context.triggered[0]["prop_id"].split(".")[0]
-    if input_triggered == "excel_btn":
+    if input_triggered == "excel_btn" and n_clicks:
         sec = 10
         df = pd.DataFrame(table_data)
-        df.to_csv("Labeled_Eye_Images.csv")
-        return notification_text, sec
-    elif input_triggered == 'submit_btn':
+        return send_data_frame(df.to_csv, filename="Labeled_Eye_Images.csv"), notification_text, sec
+    elif input_triggered == 'excel_notification_nterval' and sec > 0:
+        sec = sec - 1
+        if sec > 0:
+            return None, notification_text, sec
+        else:
+            return None, no_notification, sec
+    elif sec == 0:
+        return None, no_notification, sec
+
+@app.callback(
+    [Output('db_notification_placeholder', 'children'),
+     Output("db_notification_store", "data")],
+    [Input('submit_btn', 'n_clicks'),
+     Input("db_notification_interval", "n_intervals")],
+    [State('table', 'data'),
+     State('db_notification_store', 'data')]
+)
+def save_to_db(n_clicks, n_intervals, table_data, sec):
+    no_notification = html.Plaintext("", style={'margin': "0px"})
+    notification_text = html.Plaintext("The Shown Table Data has been saved to the database.",
+                                       style={'color': 'green', 'font-weight': 'bold', 'font-size': 'large'})
+    input_triggered = dash.callback_context.triggered[0]["prop_id"].split(".")[0]
+
+    if input_triggered == 'submit_btn':
         sec = 10
         df = pd.DataFrame(table_data)
         df.to_sql('labeling-results', con=db.engine, if_exists='replace', index_label=False)
         return notification_text, sec
-    elif input_triggered == 'interval' and sec > 0:
+    elif input_triggered == 'db_notification_interval' and sec > 0:
         sec = sec - 1
         if sec > 0:
             return notification_text, sec
@@ -161,7 +190,6 @@ def data_save(excel_clicks, submit_clicks, n_intervals, table_data, sec):
     elif sec == 0:
         return no_notification, sec
 
+
 if __name__ == '__main__':
     app.run_server(debug=True)
-
-
