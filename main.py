@@ -14,21 +14,18 @@ import plotly.express as px
 from flask_sqlalchemy import SQLAlchemy
 from flask import Flask
 
-#server = Flask(__name__)
-#app = dash.Dash(__name__, server=server, suppress_callback_exceptions=True)
-#app.server.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+server = Flask(__name__)
+app = dash.Dash(__name__, server=server, suppress_callback_exceptions=True)
+app.server.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-app = dash.Dash(__name__)
-server = app.server
-#app.config.suppress_callback_exceptions = True
-#app.server.config["SQLALCHEMY_DATABASE_URI"] = "postgres://kcfwfqwznavpjq:9473936daf43bff3d17c1dd8ab2c28144dfbf677\
-#14cb30622e3017bbe55cdeac@ec2-34-197-188-147.compute-1.amazonaws.com:5432/d9eat64jon4dti"
+app.server.config["SQLALCHEMY_DATABASE_URI"] = "postgres://sijsukdyexzkgd:d3eb93de50667df727a076329de19ad474eca375fe2cd\
+634209dc4911dfb91b4@ec2-54-163-47-62.compute-1.amazonaws.com:5432/dbi07hebtnf8ic"
 
-#db = SQLAlchemy(app.server)
+db = SQLAlchemy(app.server)
 
 # -----------------------
 
-columns_labels = ['Image File Name ', 'Class']
+columns_labels = ['Image File Name', 'Class']
 columns = [{'name': i, "id": i} for i in columns_labels]
 columns[-1]['presentation'] = 'dropdown'
 
@@ -42,7 +39,6 @@ boto_kwargs = {
     "region_name": getenv("AWS_REGION"),
 }
 s3_client = boto3.Session(**boto_kwargs).client("s3")
-#s3_client = boto3.client('s3')
 s3_resource = boto3.resource('s3')
 
 bucket_name = 'eye-fundi-images'
@@ -109,25 +105,15 @@ app.layout = html.Div([
 )
 def label_image(json_data, table_data):
     global current_img_index
-    all_table_data = []
-
     if json_data is not None:
-        if table_data is not None:
-            for img in table_data:
-                img_val = []
-                for i in img.values():
-                    img_val.append(i)
-                all_table_data.append(img_val)
-
         current_img_index += 1
         if current_img_index > len(images) - 2:
             current_img_index = -2
             raise PreventUpdate
         else:
             if 0 <= current_img_index < len(images) - 2:
-                all_table_data.append([images[current_img_index]['Key'], 'Healthy'])
-
-    df = pd.DataFrame(all_table_data, columns=columns_labels)
+                table_data.append({'Image File Name': images[current_img_index]['Key'], 'Class': 'Healthy'})
+    df = pd.DataFrame(table_data)
     return df.to_dict('records'), images[current_img_index]['ImgURL']
 
 
@@ -140,12 +126,11 @@ def label_image(json_data, table_data):
     [State('table', 'data'),
      State('store', 'data')]
 )
-def df_to_csv(excel_clicks, submit_clicks, n_intervals, table_data, sec):
+def data_save(excel_clicks, submit_clicks, n_intervals, table_data, sec):
     no_notification = html.Plaintext("", style={'margin': "0px"})
     notification_text = html.Plaintext("The Shown Table Data has been saved.",
                                        style={'color': 'green', 'font-weight': 'bold', 'font-size': 'large'})
     input_triggered = dash.callback_context.triggered[0]["prop_id"].split(".")[0]
-
     if input_triggered == "excel_btn":
         sec = 10
         df = pd.DataFrame(table_data)
@@ -153,23 +138,17 @@ def df_to_csv(excel_clicks, submit_clicks, n_intervals, table_data, sec):
         return notification_text, sec
     elif input_triggered == 'submit_btn':
         sec = 10
+        df = pd.DataFrame(table_data)
+        df.to_sql('labeling-results', con=db.engine, if_exists='replace', index_label=False)
         return notification_text, sec
     elif input_triggered == 'interval' and sec > 0:
-        sec -= 1
+        sec = sec - 1
         if sec > 0:
             return notification_text, sec
         else:
             return no_notification, sec
     elif sec == 0:
         return no_notification, sec
-
-#@app.callback(Output('table', 'data'),
-#              [Input('submit_btn', 'n_clicks')])
-#def populate_datatable(n_clicks):
-#    df = pd.read_sql_table('productlist', con=db.engine)
-#    return df.to_dict('records')
-
-
 
 if __name__ == '__main__':
     app.run_server(debug=True)
