@@ -15,7 +15,7 @@ from flask import Flask
 
 server = Flask(__name__)
 app = dash.Dash(__name__, server=server, suppress_callback_exceptions=True)
-app.server.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+#app.server.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 app.server.config["SQLALCHEMY_DATABASE_URI"] = "postgres://sijsukdyexzkgd:d3eb93de50667df727a076329de19ad474eca375fe2cd\
 634209dc4911dfb91b4@ec2-54-163-47-62.compute-1.amazonaws.com:5432/dbi07hebtnf8ic"
