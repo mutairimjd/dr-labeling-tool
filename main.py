@@ -23,9 +23,21 @@ app.server.config["SQLALCHEMY_DATABASE_URI"] = "postgres://sijsukdyexzkgd:d3eb93
 
 db = SQLAlchemy(app.server)
 
+class Results(db.Model):
+
+    __tablename__ = 'labeling-results'
+
+    Image_name = db.Column('Image File Name', db.String(40), nullable=False, primary_key=True)
+    Class_name = db.Column('Class', db.String(40), nullable=False)
+
+    def __init__(self, image_name, class_name):
+        self.Image_name = image_name
+        self.Class_name = class_name
+
 # -----------------------
 
 columns_labels = ['Image File Name', 'Class']
+
 columns = [{'name': i, "id": i} for i in columns_labels]
 columns[-1]['presentation'] = 'dropdown'
 
